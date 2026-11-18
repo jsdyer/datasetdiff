@@ -2,6 +2,7 @@
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import json
 import shutil
 import tempfile
 import threading
@@ -46,6 +47,19 @@ def main():
                 assert not page.locator("#results").is_visible()
                 page.locator("#clear").click()
                 assert page.locator("#compare").is_disabled()
+                for side, x in (("old", -63), ("new", -64)):
+                    feature = {"type": "Feature", "id": "a", "properties": {"name": "Harbour"},
+                               "geometry": {"type": "Point", "coordinates": [x, 44]}}
+                    dataset = json.dumps({"type": "FeatureCollection", "features": [feature]}).encode()
+                    page.locator("#" + side + "-file").set_input_files(
+                        {"name": side + ".geojson", "mimeType": "application/geo+json", "buffer": dataset})
+                page.locator("#compare").click()
+                page.get_by_text('"a"', exact=True).click()
+                assert "Feature · geometry" in page.locator("details[open]").inner_text()
+                with page.expect_download() as geo_download:
+                    page.locator("#csv").click()
+                assert '"geometry"' in Path(geo_download.value.path()).read_text()
+                page.locator("#clear").click()
                 page.locator("#sample").click()
                 page.locator("#compare").click()
                 page.locator("#entries details").first.wait_for()
@@ -59,7 +73,7 @@ def main():
                 page.screenshot(path=str(screenshots / "mobile.png"), full_page=True)
                 assert not errors, errors
                 browser.close()
-            print("Browser checks passed: project subpath, sample, clear, safe text and mobile layout")
+            print("Browser checks passed: CSV, GeoJSON geometry, validation, exports and mobile layout")
         finally:
             server.shutdown()
 

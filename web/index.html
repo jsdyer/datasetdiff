@@ -1,18 +1,143 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="{{DESCRIPTION}}"><title>{{TITLE}} · CoolCode</title><link rel="stylesheet" href="./style.css"><script type="module" src="./app.mjs"></script></head>
-<body data-tool="{{TOOL_ID}}">
-<header><div class="nav"><a class="brand" href="https://coolcode.ca/">CoolCode<span>.ca</span></a><nav aria-label="Project"><a href="#method">Method</a><a href="{{SOURCE_URL}}#linux-companion">Linux companion ↗</a></nav></div></header>
-<main>
-<section class="intro"><div class="kicker">Public data / Change tracking</div><h1>Dataset Diff<span>.</span></h1><p>Put two snapshots side by side. Match records by a stable ID to see what appeared, disappeared, or changed.</p></section>
-<section class="panel" aria-labelledby="snapshot-heading"><div class="section-heading"><h2 id="snapshot-heading">Compare snapshots</h2><button type="button" id="sample">Try a permit example</button></div>
-<div class="inputs">
-<label class="drop" id="old-zone"><span class="file-title"><span class="mark">−</span>Earlier snapshot</span><strong id="old-name">Choose or drop a file</strong><small id="old-meta">CSV or GeoJSON · up to 32 MiB</small><input id="old-file" type="file" accept=".csv,.geojson,.json" aria-label="Choose earlier snapshot"></label>
-<label class="drop" id="new-zone"><span class="file-title"><span class="mark">+</span>Later snapshot</span><strong id="new-name">Choose or drop a file</strong><small id="new-meta">CSV or GeoJSON · up to 32 MiB</small><input id="new-file" type="file" accept=".csv,.geojson,.json" aria-label="Choose later snapshot"></label>
-</div>
-<div class="options"><div><label for="key">Match records by</label><select id="key" disabled><option>Choose two snapshots first</option></select></div><button id="compare" class="primary" disabled>Compare snapshots</button><button id="clear" class="plain" type="button">Reset</button></div>
-<p role="status" id="status">Your files stay in this browser tab.</p></section>
-<section id="results" class="panel" aria-labelledby="result-heading" hidden><div class="section-heading"><h2 id="result-heading">Comparison results</h2><div class="actions"><button id="json">Download JSON</button><button id="csv">Download CSV</button></div></div><div id="stats"></div>
-<div class="filters"><label>Show<select id="kind"><option value="all">All changes</option><option value="added">Added</option><option value="removed">Removed</option><option value="changed">Changed</option></select></label><label>Find record ID<input id="search" type="search" placeholder="Search identifiers"></label></div>
-<div id="entries"></div><div class="paging"><button id="prev">Previous</button><span id="range" aria-live="polite"></span><button id="next">Next</button></div></section>
-<section class="method" id="method"><h2>Reading the comparison</h2><div><h3>Choose a lasting ID</h3><p>A permit number or feature ID can identify the same record across two exports. Row numbers and recycled IDs can give misleading results. Missing or duplicate keys stop comparison.</p><h3>What counts as a change?</h3><p>CSV values are compared as text, including spaces and leading zeros. GeoJSON property types are preserved. Changed coordinates or coordinate order count as geometry edits. Object key order and record order are ignored. Feature IDs and geometry appear separately from properties.</p><h3>Keep a history on Linux</h3><p>The <a href="{{SOURCE_URL}}#linux-companion">SQLite companion</a> can collect a file or HTTPS feed on a schedule and export comparisons with the same matching rules. The browser keeps no uploaded data after the tab closes.</p></div></section>
-</main><footer><a href="https://coolcode.ca/">CoolCode.ca</a><a href="{{SOURCE_URL}}">Source and documentation ↗</a></footer></body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="{{DESCRIPTION}}" />
+    <title>{{TITLE}} · CoolCode</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./app.mjs"></script>
+  </head>
+  <body data-tool="{{TOOL_ID}}">
+    <header>
+      <div class="nav">
+        <a class="brand" href="https://coolcode.ca/"
+          >CoolCode<span>.ca</span></a
+        >
+        <nav aria-label="Project">
+          <a href="#method">Method</a
+          ><a href="{{SOURCE_URL}}#linux-companion">Linux companion ↗</a>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <section class="intro">
+        <div class="kicker">Public data / Change tracking</div>
+        <h1>Dataset Diff<span>.</span></h1>
+        <p>
+          Put two snapshots side by side. Match records by a stable ID to see
+          what appeared, disappeared, or changed.
+        </p>
+      </section>
+      <section class="panel" aria-labelledby="snapshot-heading">
+        <div class="section-heading">
+          <h2 id="snapshot-heading">Compare snapshots</h2>
+          <button type="button" id="sample">Try a permit example</button>
+        </div>
+        <div class="inputs">
+          <label class="drop" id="old-zone"
+            ><span class="file-title"
+              ><span class="mark">−</span>Earlier snapshot</span
+            ><strong id="old-name">Choose or drop a file</strong
+            ><small id="old-meta">CSV or GeoJSON · up to 32 MiB</small
+            ><input
+              id="old-file"
+              type="file"
+              accept=".csv,.geojson,.json"
+              aria-label="Choose earlier snapshot"
+          /></label>
+          <label class="drop" id="new-zone"
+            ><span class="file-title"
+              ><span class="mark">+</span>Later snapshot</span
+            ><strong id="new-name">Choose or drop a file</strong
+            ><small id="new-meta">CSV or GeoJSON · up to 32 MiB</small
+            ><input
+              id="new-file"
+              type="file"
+              accept=".csv,.geojson,.json"
+              aria-label="Choose later snapshot"
+          /></label>
+        </div>
+        <div class="options">
+          <div>
+            <label for="key">Match records by</label
+            ><select id="key" disabled>
+              <option>Choose two snapshots first</option>
+            </select>
+          </div>
+          <button id="compare" class="primary" disabled>
+            Compare snapshots</button
+          ><button id="clear" class="plain" type="button">Reset</button>
+        </div>
+        <p role="status" id="status">Your files stay in this browser tab.</p>
+      </section>
+      <section
+        id="results"
+        class="panel"
+        aria-labelledby="result-heading"
+        hidden
+      >
+        <div class="section-heading">
+          <h2 id="result-heading">Comparison results</h2>
+          <div class="actions">
+            <button id="json">Download JSON</button
+            ><button id="csv">Download CSV</button>
+          </div>
+        </div>
+        <div id="stats"></div>
+        <div class="filters">
+          <label
+            >Show<select id="kind">
+              <option value="all">All changes</option>
+              <option value="added">Added</option>
+              <option value="removed">Removed</option>
+              <option value="changed">Changed</option>
+            </select></label
+          ><label
+            >Find record ID<input
+              id="search"
+              type="search"
+              placeholder="Search identifiers"
+          /></label>
+        </div>
+        <div id="entries"></div>
+        <div class="paging">
+          <button id="prev">Previous</button
+          ><span id="range" aria-live="polite"></span
+          ><button id="next">Next</button>
+        </div>
+      </section>
+      <section class="method" id="method">
+        <h2>Reading the comparison</h2>
+        <div>
+          <h3>Choose a lasting ID</h3>
+          <p>
+            A permit number or feature ID can identify the same record across
+            two exports. Row numbers and recycled IDs can give misleading
+            results. Missing or duplicate keys stop comparison.
+          </p>
+          <h3>What counts as a change?</h3>
+          <p>
+            CSV values are compared as text, including spaces and leading zeros.
+            GeoJSON property types are preserved. Changed coordinates or
+            coordinate order count as geometry edits. Object key order and
+            record order are ignored. Feature IDs and geometry appear separately
+            from properties.
+          </p>
+          <h3>Keep a history on Linux</h3>
+          <p>
+            The
+            <a href="{{SOURCE_URL}}#linux-companion">SQLite companion</a> can
+            collect a file or HTTPS feed on a schedule and export comparisons
+            with the same matching rules. The browser keeps no uploaded data
+            after the tab closes.
+          </p>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <a href="https://coolcode.ca/">CoolCode.ca</a
+      ><a href="{{SOURCE_URL}}">Source and documentation ↗</a>
+    </footer>
+  </body>
+</html>

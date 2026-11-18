@@ -1,102 +1,58 @@
-# CoolCode browser tool template
+# Dataset Diff
 
-A starting point for independent tools at `coolcode.ca/<repo>/`: a working local-text
-example, responsive UI, Python standard-library build, Node tests, PR checks and Pages
-publication. No npm install is needed.
+[Compare two snapshots in your browser](https://coolcode.ca/datasetdiff/) · [CoolCode catalogue](https://coolcode.ca/)
 
-## One-time template setup
+Choose an earlier and a later CSV or GeoJSON file, then select a stable record ID. Inspect added, removed and changed records, expand the before/after values and download JSON or a flat CSV. The sample demonstrates a fictional municipal permit register. The browser processes files locally in a worker and keeps no user data between visits. It requires no account or installation.
 
-Enable **Settings → General → Template repository** here. This repository does not
-need Pages enabled: its workflow builds/tests but intentionally skips deployment.
-New copies also skip deployment until `scripts/init.py` sets the tool ID to match
-their repository name. This lets you create the repo before configuring Pages.
+## Matching rules
 
-## Start a new tool
+- Files must share a format. CSV uses UTF-8, comma delimiters, one unique header per column and standard double-quote escaping. Multiline quoted fields are supported. Blank lines outside records are skipped. Spaces, leading zeros, blank values and case matter.
+- GeoJSON accepts a FeatureCollection. Match on a top-level feature ID or a shared scalar property. String and numeric IDs remain distinct. A missing, blank, duplicate or non-scalar key stops comparison. String-encode integer identifiers outside JavaScript's safe range before importing.
+- Field and record order can change without producing an edit. The report distinguishes missing properties from JSON null, and compares nested fields and geometry exactly. A geometry difference may reflect rounding, vertex order or a changed survey. Coordinate equality uses the values as supplied.
+- The JSON report holds IDs, record-level additions/removals, before/after field values, feature metadata and counts. The change CSV contains one line per edited field or added/removed record. An empty before/after CSV cell indicates an absent value. JSON null appears as `null`. The CSV prefixes spreadsheet formula-like cells with an apostrophe. Use JSON when exact unescaped keys matter.
+- Each input may contain up to 32 MiB of UTF-8 text. Selecting the same file twice is valid. Empty CSV exports must retain their header, and an empty GeoJSON snapshot must contain an empty features array.
+- A change records what differed between two retrieved snapshots. The observation times indicate when the collector retrieved a version. The publisher may supply its own event dates, survey dates or coverage periods.
 
-1. Select **Use this template → Create a new repository**, choose owner `jsdyer`,
-   a unique lowercase name such as `my-tool`, and public visibility.
-2. Clone the new repository. Use Python 3.12+ and Node 24+.
-3. Set the identity, using a slug that matches the repository name:
+## Linux companion
 
-```sh
-python3 scripts/init.py my-tool --title "My Tool" --description "Describe what this tool does."
-```
+The companion uses **Node.js 24+** and its bundled SQLite driver. No database service or npm dependencies are required. The browser and CLI import the same parser and comparator.
 
-Review the category, tags and icon in `tool.json`. `access: "browser"` tells the main
-catalogue that the tool works immediately without installation. `--owner` supports a different
-GitHub owner, but only projects owned by `jsdyer` inherit the CoolCode domain.
-
-4. Replace the example in `web/` and its tests. Update the privacy explanation,
-   source attribution and README to describe the real tool.
-5. Test and preview:
+Install into your user account with Git, Node.js and npm:
 
 ```sh
-node --test tests/*.test.mjs
-python3 -m unittest discover -s tests -v
-python3 scripts/build.py
-python3 -m http.server 8000 --directory dist
+git clone https://github.com/jsdyer/datasetdiff.git
+cd datasetdiff
+npm install --global --prefix "$HOME/.local" .
+export PATH="$HOME/.local/bin:$PATH"
+datasetdiff --help
 ```
 
-Open `http://localhost:8000/`. The example trims lines, skips blanks and removes exact
-duplicates, preserving first-seen order and capitalization. It makes no API requests
-and does not persist text. Update that explanation if your app behaves differently.
+You can also run `node cli/datasetdiff.mjs` from the checkout. Keep the checkout in place when npm installs it as a local symlink.
 
-CI also tests the browser flow and mobile layout at a project subpath. Replace the
-sample assertions in `tests/browser_smoke.py` when implementing your own UI. To run
-that check locally (optional for ordinary preview):
+Collect a CSV named `permits.csv` from the current directory. Run this again after replacing the file with an updated export:
 
 ```sh
-python3 -m venv .venv
-. .venv/bin/activate
-python3 -m pip install -r tests/browser-requirements.txt
-python3 -m playwright install --with-deps chromium
-python3 tests/browser_smoke.py
+datasetdiff collect --db permits.sqlite --name permits --source ./permits.csv --key permit_id
+datasetdiff history --db permits.sqlite --name permits
+datasetdiff diff --db permits.sqlite --name permits > changes.json
+datasetdiff diff --db permits.sqlite --name permits --from 1 --to 2 --format csv > changes.csv
 ```
 
-Playwright is a test-only dependency; the app and its static build do not use it.
+Use an HTTPS download URL as `--source` to fetch an agency's export. Use `--feature-id` in place of `--key` to match GeoJSON's top-level feature IDs. The collector validates the keys before writing. Each series retains its source, format and key. Choose a new series name when any of these changes.
 
-## Publish and register
+SQLite stores compressed original bytes and a SHA-256 digest per distinct body. Consecutive identical downloads update the last-check timestamp. A return to an earlier version creates a new observation referencing the existing body. Invalid downloads or duplicate keys leave history intact. Collection uses one short-lived process and a write transaction per run. Concurrent collectors sharing a database wait up to 60 seconds and may be retried.
 
-When the actual tool is ready, in the **new tool repository** set **Settings → Pages → Build and deployment →
-Source → GitHub Actions**. Push to `main`, or manually run **Browser tool · Check and
-publish** after enabling Pages. If the initial deployment ran before Pages was enabled,
-enable it and rerun. PRs only check/build and provide a downloadable preview artifact.
+### Schedule daily collection
 
-Keep asset paths and module imports relative. Check `https://coolcode.ca/my-tool/`.
-Do not add a CNAME or set `coolcode.ca` as this project's custom domain; the account
-site supplies it. Only successful `main` builds deploy.
+Create the data and log directory and confirm `node` and `datasetdiff` are on your cron PATH. Add the following using `crontab -e`, replacing the example account, executable location, local file and ID column with your own. The schedule uses the host's local time. The source can also be an HTTPS export.
 
-After verifying the app, copy the reviewed object from `tool.json` into `data/tools.json`
-in [the main site](https://github.com/jsdyer/jsdyer.github.io). Each tool still builds
-independently. Update the hub record when listing metadata changes; the hub is the
-authority for discovery. Ordinary app updates touch only this repository.
+```cron
+PATH=/home/alex/.local/bin:/usr/local/bin:/usr/bin:/bin
+15 6 * * * /home/alex/.local/bin/datasetdiff collect --db /home/alex/data/history.sqlite --name permits --source /home/alex/data/permits.csv --key permit_id >> /home/alex/data/datasetdiff.log 2>&1
+```
 
-The main site separates **Use in your browser** from **Install yourself**. An app
-that asks for a file is still a browser tool. Standalone Linux packages should start
-in their own repositories with their own build/release workflow, rather than copying
-this browser-only scaffold. Their hub record uses `access: "install"`, links to an
-installation guide, and includes `requirements`.
+Use private filesystem permissions for snapshots containing personal or unpublished data. The scheduled process reads the configured source and writes only to the local SQLite database and your chosen log.
 
-## Files
+## Develop
 
-| Path | Purpose |
-| --- | --- |
-| `tool.json` | Page metadata and a ready-to-copy catalogue record |
-| `web/` | HTML, responsive CSS, DOM interactions and separate model logic |
-| `scripts/build.py` | Escape metadata and build `web/` into `dist/` |
-| `scripts/init.py` | Set a new project's identity |
-| `tests/` | Application and builder tests |
-| `.github/workflows/pages.yml` | Check PRs and publish successful main builds |
-| `AGENTS.md` | Instructions for future coding work |
-
-Namespace optional storage as `coolcode:<tool-id>:<key>`; CoolCode paths share a
-browser origin. Don't save pasted text/uploads by default. Document external APIs
-and send only the information needed for the selected action. Never embed secrets.
-
-Scheduled refresh is opt-in. Validate source data before deploying, display its date,
-and preserve the last good deployment on failure. Public-repository schedules can
-stop after 60 days without repository activity.
-
-Templates don't propagate future edits automatically. Adopt fixes explicitly and
-consider a versioned reusable workflow once several tools confirm the shared process.
-Choose and add the intended software license before distributing a new project.
+Run `node --test tests/*.test.mjs`, `python3 -m unittest discover -s tests -v`, then `python3 scripts/build.py`. The static browser tool is written to `dist/`. GitHub Actions also checks file selection, downloads, validation and responsive layout in Chromium before publishing main to GitHub Pages.

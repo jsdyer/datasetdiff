@@ -1,0 +1,9 @@
+{
+  "name": "coolcode-datasetdiff",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Collect CSV and GeoJSON snapshots into SQLite and compare them by stable ID",
+  "engines": { "node": ">=24" },
+  "bin": { "datasetdiff": "cli/datasetdiff.mjs" },
+  "files": ["cli/datasetdiff.mjs", "web/model.mjs", "README.md"]
+}

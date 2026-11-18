@@ -30,14 +30,25 @@ def main():
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.goto(f"http://127.0.0.1:{server.server_port}/example-tool/")
                 page.locator("#sample").click()
-                assert page.locator("#output").input_value() == "Halifax\nLangley\nVancouver"
-                assert "1 duplicate removed" in page.locator("#status").inner_text()
-                page.locator("#input").fill('<img src=x onerror="alert(1)">\n<img src=x onerror="alert(1)">')
-                assert page.locator("#output").input_value() == '<img src=x onerror="alert(1)">'
-                assert page.locator("img").count() == 0
+                page.locator("#compare").click()
+                page.locator("#results").wait_for()
+                page.get_by_text("1–3 of 3", exact=True).wait_for()
+                page.locator("#kind").select_option("changed")
+                page.get_by_text('"P-101"', exact=True).click()
+                assert '"Approved"' in page.locator("details[open]").inner_text()
+                with page.expect_download() as download:
+                    page.locator("#json").click()
+                assert download.value.suggested_filename == "dataset-diff.json"
+                page.locator("#old-file").set_input_files({"name":"earlier.csv","mimeType":"text/csv","buffer":b"id,status\n1,open\n1,duplicate"})
+                page.locator("#new-file").set_input_files({"name":"later.csv","mimeType":"text/csv","buffer":b"id,status\n1,closed"})
+                page.locator("#compare").click()
+                page.get_by_text("repeats ID", exact=False).wait_for()
+                assert not page.locator("#results").is_visible()
                 page.locator("#clear").click()
-                assert page.locator("#output").input_value() == ""
+                assert page.locator("#compare").is_disabled()
                 page.locator("#sample").click()
+                page.locator("#compare").click()
+                page.locator("#entries details").first.wait_for()
                 page.screenshot(path=str(screenshots / "desktop.png"), full_page=True)
                 page.set_viewport_size({"width": 390, "height": 844})
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")

@@ -14,7 +14,7 @@ SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
 def metadata(root=ROOT):
     tool = json.loads((root / "tool.json").read_text(encoding="utf-8"))
-    required = {"id", "title", "description", "category", "tags", "icon", "url", "source", "hosting", "access"}
+    required = {"id", "title", "description", "category", "tags", "icon", "url", "source", "hosting", "access", "install_url", "requirements"}
     if not isinstance(tool, dict) or set(tool) != required:
         raise ValueError("tool.json has missing or unknown fields")
     for key in required - {"tags"}:
@@ -29,6 +29,9 @@ def metadata(root=ROOT):
     source = urlsplit(tool["source"])
     if source.scheme != "https" or not source.hostname or source.username is not None or any(c.isspace() for c in tool["source"]) or "\\" in tool["source"]:
         raise ValueError("source must be an HTTPS URL without credentials or whitespace")
+    guide = urlsplit(tool["install_url"])
+    if guide.scheme != "https" or not guide.hostname:
+        raise ValueError("Use an HTTPS installation guide")
     return tool
 
 

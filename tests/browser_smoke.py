@@ -51,7 +51,11 @@ def main():
                 page.locator("#entries details").first.wait_for()
                 page.screenshot(path=str(screenshots / "desktop.png"), full_page=True)
                 page.set_viewport_size({"width": 390, "height": 844})
-                assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+                overflow = page.evaluate("""
+                    [...document.querySelectorAll('*')].filter(el => el.getBoundingClientRect().right > innerWidth + 1)
+                      .map(el => [el.tagName, el.id, el.className, Math.round(el.getBoundingClientRect().right)])
+                """)
+                assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), overflow
                 page.screenshot(path=str(screenshots / "mobile.png"), full_page=True)
                 assert not errors, errors
                 browser.close()

@@ -431,3 +431,5 @@ footer {
     padding-inline: 1px;
   }
 }
+
+.source-guide { margin: 0 0 1rem; max-width: 78ch; line-height: 1.5; }

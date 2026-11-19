@@ -1,6 +1,7 @@
 const $ = (id) => document.getElementById(id);
 const sides = ["old", "new"];
 const chosen = [null, null];
+const releaseSources = new WeakMap();
 const size = 25;
 let worker,
   sequence = 0,
@@ -99,9 +100,8 @@ function receive({ data }) {
           m.format +
           " · " +
           m.count.toLocaleString() +
-          " records · file modified " +
-          m.fileModified.slice(0, 10) +
-          " UTC"),
+          " records · " +
+          (m.release ? m.release.title : "file modified " + m.fileModified.slice(0, 10) + " UTC")),
     );
     status(
       data.keys.length
@@ -174,7 +174,7 @@ function reload() {
       "The comparison worker stopped. Reopen your files and try again.",
       true,
     );
-  ask("load", { files: chosen });
+  ask("load", { files: chosen, releases: chosen.map(file => releaseSources.get(file) ?? null) });
   status("Reading both snapshots locally…");
 }
 sides.forEach((s, i) => {
@@ -230,18 +230,31 @@ $("clear").onclick = () => {
   sides.forEach((s) => ($(s + "-file").value = ""));
   reload();
 };
-$("sample").onclick = () => {
-  const header = "permit_id,project,status\n";
-  const values = [
-    "P-101,Harbour wharf,Submitted\nP-102,Brook crossing,Reviewed\nP-103,Market roof,Approved\n",
-    "P-101,Harbour wharf,Approved\nP-103,Market roof,Approved\nP-104,Trail bridge,Submitted\n",
-  ];
-  values.forEach((v, i) => {
-    chosen[i] = new File(
-      [header + v],
-      ["earlier", "later"][i] + "-example.csv",
-      { type: "text/csv", lastModified: Date.UTC(2026, 0, 1 + i * 7) },
-    );
-  });
-  reload();
+const editions = [
+  { year: 2020, title: "2020-00906-TIR, PDF page 2", url: "https://openinformation.novascotia.ca/d/8psg-54u5" },
+  { year: 2023, title: "2023-01020-DPW, PDF page 3", url: "https://openinformation.novascotia.ca/d/5twe-uvhv" },
+];
+
+$("bridge-editions").onclick = async () => {
+  const ticket = sequence;
+  const button = $("bridge-editions");
+  button.disabled = true;
+  status("Opening both bridge inspection extracts…");
+  try {
+    const files = await Promise.all(editions.map(async edition => {
+      const name = `Annapolis-Level-1-${edition.year}.csv`;
+      const response = await fetch("./inspections/" + name);
+      if (!response.ok) throw Error("The inspection extracts could not be loaded. Try again or choose two files.");
+      const file = new File([await response.blob()], name, { type: "text/csv" });
+      releaseSources.set(file, edition);
+      return file;
+    }));
+    if (sequence !== ticket) return;
+    chosen.splice(0, chosen.length, ...files);
+    reload();
+  } catch (error) {
+    if (sequence === ticket) status(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
 };

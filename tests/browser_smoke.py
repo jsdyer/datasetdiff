@@ -30,13 +30,13 @@ def main():
                 errors = []
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.goto(f"http://127.0.0.1:{server.server_port}/example-tool/")
-                page.locator("#sample").click()
+                page.locator("#bridge-editions").click()
                 page.locator("#compare").click()
                 page.locator("#results").wait_for()
-                page.get_by_text("1–3 of 3", exact=True).wait_for()
+                page.get_by_text("1–4 of 4", exact=True).wait_for()
                 page.locator("#kind").select_option("changed")
-                page.get_by_text('"P-101"', exact=True).click()
-                assert '"Approved"' in page.locator("details[open]").inner_text()
+                page.get_by_text('"ANN002"', exact=True).click()
+                assert '"2"' in page.locator("details[open]").inner_text()
                 with page.expect_download() as download:
                     page.locator("#json").click()
                 assert download.value.suggested_filename == "dataset-diff.json"
@@ -60,7 +60,7 @@ def main():
                     page.locator("#csv").click()
                 assert '"geometry"' in Path(geo_download.value.path()).read_text()
                 page.locator("#clear").click()
-                page.locator("#sample").click()
+                page.locator("#bridge-editions").click()
                 page.locator("#compare").click()
                 page.locator("#entries details").first.wait_for()
                 page.screenshot(path=str(screenshots / "desktop.png"), full_page=True)

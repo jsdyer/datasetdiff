@@ -2,7 +2,11 @@
 
 [Compare two snapshots in your browser](https://coolcode.ca/datasetdiff/) · [CoolCode catalogue](https://coolcode.ca/)
 
-Choose an earlier and a later CSV or GeoJSON file, then select a stable record ID. Inspect added, removed and changed records, expand the before/after values and download JSON or a flat CSV. The sample demonstrates a fictional municipal permit register. The browser processes files locally in a worker and keeps no user data between visits. It requires no account or installation.
+Choose an earlier and a later CSV or GeoJSON file, then select a stable record ID. Inspect added, removed and changed records, expand the before/after values and download JSON or a flat CSV. The built-in comparison opens two small CSVs drawn from the original Nova Scotia bridge-inspection disclosures. The extracts contain the same nine structures, ANN001–ANN009, from the first Annapolis page in each release. They retain each finalised Level 1 overall rating. Download the [2020 extract](web/inspections/Annapolis-Level-1-2020.csv) and [2023 extract](web/inspections/Annapolis-Level-1-2023.csv), or read [the 2020 release, PDF p. 2](https://openinformation.novascotia.ca/api/views/8psg-54u5/files/d1162ffb-acd0-4911-8983-5074ef4c8bd9?download=true&filename=2020-00906-TIR_PublicPackage.pdf#page=2) and [the 2023 release, PDF p. 3](https://openinformation.novascotia.ca/download/5twe-uvhv/application/pdf#page=3). Province of Nova Scotia, Transportation and Infrastructure Renewal and Public Works. The browser processes files locally in a worker and keeps no user data between visits. It requires no account or installation.
+
+<!-- coolcode:guide -->
+Compare the 2020 and 2023 Nova Scotia bridge releases by record_id. Four of the nine Annapolis County bridges changed Level 1 rating. Open ANN002 to see Anderson Brook Bridge move from 3 to 2.
+<!-- /coolcode:guide -->
 
 ## Matching rules
 

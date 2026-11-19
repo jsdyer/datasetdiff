@@ -28,9 +28,11 @@ self.onmessage = async ({ data }) => {
   try {
     if (action === "load") {
       [before, after] = await Promise.all(data.files.map(load));
-      fileInfo = data.files.map((f) => ({
-        name: f.name,
-        fileModified: new Date(f.lastModified).toISOString(),
+      fileInfo = data.files.map((file, index) => ({
+        name: file.name,
+        ...(data.releases?.[index]
+          ? { release: data.releases[index] }
+          : { fileModified: new Date(file.lastModified).toISOString() }),
       }));
       const keys = keyOptions(before, after);
       const preferred =
@@ -50,7 +52,7 @@ self.onmessage = async ({ data }) => {
         keys,
         preferred: preferred?.value || "",
         meta: [before, after].map((d, i) => ({
-          fileModified: fileInfo[i].fileModified,
+          ...fileInfo[i],
           format: d.format,
           count: d.rows.length,
         })),
